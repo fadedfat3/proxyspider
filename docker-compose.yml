@@ -1,0 +1,50 @@
+version: "2.0"
+services:
+
+  redis:
+    image: redis:alpine
+    #container_name: douban_redis
+    #ports:
+    #  - "6379:6379"
+    command: >
+      --requirepass 123456
+
+  splash:
+    image: scrapinghub/splash
+    container_name: douban_splash
+    #ports:
+    #  - "8050:8050"
+
+  haipproxy:
+    build: ./haipproxy-scrapy
+    #container_name: douban_haipproxy_scrapy
+    command: sh run.sh
+    volumes:
+      - ./haipproxy-scrapy/haipproxy:/srv/haipproxy
+      - ./haipproxy-scrapy/douban:/srv/ScrapyDouban
+      - ./haipproxy-scrapy/_logs:/logs
+      - ./haipproxy-scrapy/_photos:/photos
+    ports:
+      - "3128:3128"
+    links:
+      - redis
+      - splash
+      - db
+
+  db:
+    build: ./mysql
+    #container_name: douban_db
+    #volumes:
+    #  - douban:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=HardM0de
+      - MYSQL_DATABASE=douban
+    command: mysqld --default-authentication-plugin=mysql_native_password
+
+  adminer:
+    image: adminer:4
+    #container_name: douban_adminer
+    ports:
+      - 8180:8080
+    links:
+      - "db"
